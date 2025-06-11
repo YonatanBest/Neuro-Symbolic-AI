@@ -1,6 +1,26 @@
 ; Initialize knowledge base
 !(bind! &kb (new-space))
 
+; Define cast functions between Nat and Number (needed for chaining)
+(= (fromNumber $n) (if (<= $n 0) Z (S (fromNumber (- $n 1)))))
+
+; Base case for forward chaining
+(= (fcc $kb $_ (: $prf $prms)) (: $prf $prms))
+
+; Recursive step for forward chaining
+(= (fcc $kb (S $k) (: $prfarg $prms))
+   (let (: $prfabs (-> $prms $ccln)) (bc $kb $k (: $prfabs (-> $prms $ccln)))
+     (fcc $kb $k (: ($prfabs $prfarg) $ccln))))
+
+; Base case for backward chaining
+(= (bc $kb $_ (: $prf $ccln)) (match $kb (: $prf $ccln) (: $prf $ccln)))
+
+; Recursive step for backward chaining
+(= (bc $kb (S $k) (: ($prfabs $prfarg) $ccln))
+   (let* (((: $prfabs (-> $prms $ccln)) (bc $kb $k (: $prfabs (-> $prms $ccln))))
+          ((: $prfarg $prms) (bc $kb $k (: $prfarg $prms))))
+     (: ($prfabs $prfarg) $ccln)))
+
 ; Disease Rules
 !(add-reduct &kb (: flu-rule 
   (-> (Evaluation has_fever $x)
@@ -135,9 +155,9 @@
   (-> (Inheritance $x common_cold)
       (Evaluation recommend_warm_fluids_rest_steam $x))))
 
-!(add-reduct &kb (: treat-asthma
+!(add-reduct &kb (: treat-asthma 
   (-> (Inheritance $x asthma)
-      (Evaluation recommend_avoid_triggers_breathing_exercises $x))))
+      (Evaluation recommend_inhaler_and_breathing_exercises $x))))
 
 !(add-reduct &kb (: treat-diabetes
   (-> (Inheritance $x diabetes)
@@ -189,4 +209,13 @@
 
 !(add-reduct &kb (: treat-back-pain
   (-> (Inheritance $x back_pain)
-      (Evaluation recommend_stretching_posture_heat $x)))) 
+      (Evaluation recommend_stretching_posture_heat $x))))
+
+; Add patient symptoms as facts
+;!(add-atom &kb (: FACT1 (Evaluation has_shortness_of_breath current_patient)))
+;!(add-atom &kb (: FACT2 (Evaluation has_wheezing current_patient)))
+;!(add-atom &kb (: FACT3 (Evaluation has_cough current_patient)))
+;!(add-atom &kb (: FACT4 (Evaluation has_chest_tightness current_patient)))
+
+; Run forward chaining from initial facts
+;!(fcc &kb (fromNumber 4) (: FACT1 (Evaluation has_shortness_of_breath current_patient))) 

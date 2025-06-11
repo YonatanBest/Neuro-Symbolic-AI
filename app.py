@@ -26,13 +26,13 @@ metta = MeTTa()
 # Initialize MeTTa knowledge base
 def init_metta():
     try:
-        # Read the symbolic.metta file
+        # Read and initialize the symbolic.metta file
         with open('symbolic.metta', 'r') as file:
             kb_init = file.read()
-        
-        # Initialize the knowledge base
+            
+        # Initialize the knowledge base with all the rules and functions
         metta.run(kb_init)
-        logger.info("MeTTa knowledge base initialized successfully from symbolic.metta")
+        logger.info("MeTTa knowledge base initialized from symbolic.metta")
     except Exception as e:
         logger.error(f"Error initializing MeTTa knowledge base: {str(e)}")
         raise
@@ -83,18 +83,90 @@ class WebUserProxyAgent(autogen.UserProxyAgent):
 
 user_proxy = WebUserProxyAgent()
 
+def convert_to_serializable(obj):
+    """Convert MeTTa objects to JSON-serializable format."""
+    if hasattr(obj, '__iter__') and not isinstance(obj, (str, bytes, bytearray)):
+        return [convert_to_serializable(item) for item in obj]
+    if hasattr(obj, 'get_children'):  # ExpressionAtom
+        return str(obj)
+    if isinstance(obj, dict):
+        return {k: convert_to_serializable(v) for k, v in obj.items()}
+    return str(obj)
+
 def query_metta(symptoms, patient):
     try:
-        # Add symptoms to MeTTa KB
-        for i, symptom in enumerate(symptoms, start=1):
-            logger.info(f"Adding symptom to KB: {symptom} for patient {patient}")
-            metta.run(f'!(add-atom &kb (: FACT{i} (Evaluation {symptom} {patient})))')
+        symbolic_steps = []
         
-        # Query for diagnosis
-        logger.info(f"Querying MeTTa for diagnosis with first symptom: {symptoms[0]}")
-        result = metta.run(f'!(fcc &kb (fromNumber 5) (: FACT1 (Evaluation {symptoms[0]} {patient})))')
-        logger.info(f"MeTTa diagnosis result: {result}")
-        return result
+        # Clear previous facts and reinitialize knowledge base
+        metta.run('!(bind! &kb (new-space))')
+        init_metta()  # Reload all rules and functions
+        
+        # Add symptoms as facts in the same format as symbolic.metta
+        for i, symptom in enumerate(symptoms, start=1):
+            fact = f'!(add-atom &kb (: FACT{i} (Evaluation {symptom} {patient})))'
+            logger.info(f"Adding fact: {fact}")  # Add logging to debug fact formation
+            metta.run(fact)
+            symbolic_steps.append({
+                'step': 'Adding Symptom',
+                'fact': f'FACT{i}: {symptom} for {patient}'
+            })
+        
+        symbolic_steps.append({'step': 'Starting Diagnosis Query', 'details': 'Checking for conditions using symbolic rules'})
+        
+        # Run forward chaining from first symptom, exactly as in symbolic.metta
+        chain_query = f'!(fcc &kb (fromNumber 4) (: FACT1 (Evaluation {symptoms[0]} {patient})))'
+        logger.info(f"Running chain query: {chain_query}")  # Add logging for chain query
+        result = metta.run(chain_query)
+        logger.info(f"Forward chaining result: {result}")
+        
+        diagnoses = []
+        if result:
+            # Process the raw MeTTa output
+            raw_output = convert_to_serializable(result)
+            symbolic_steps.append({
+                'step': 'Raw Reasoning Chain',
+                'result': raw_output
+            })
+            
+            # Extract diagnoses from the reasoning chain
+            for chain_result in result:
+                if isinstance(chain_result, str) and '(Inheritance ' in chain_result:
+                    # Extract condition from the result
+                    condition = str(chain_result).split(' ')[-1].rstrip(')')
+                    if condition not in diagnoses:
+                        diagnoses.append(condition)
+                        symbolic_steps.append({
+                            'step': 'Found Condition',
+                            'result': f'Diagnosed condition: {condition}'
+                        })
+        
+        if diagnoses:
+            symbolic_steps.append({
+                'step': 'Conditions Found',
+                'result': diagnoses
+            })
+            
+            # Look up treatments using the rules from symbolic.metta
+            for diagnosis in diagnoses:
+                treatment_query = f'!(match &kb (-> (Inheritance {patient} {diagnosis}) (Evaluation $treatment {patient})) $treatment)'
+                treatment = metta.run(treatment_query)
+                if treatment:
+                    symbolic_steps.append({
+                        'step': 'Treatment Found',
+                        'condition': diagnosis,
+                        'treatment': convert_to_serializable(treatment)
+                    })
+        else:
+            symbolic_steps.append({
+                'step': 'Diagnosis Result',
+                'details': 'No matching conditions found in knowledge base'
+            })
+        
+        return {
+            'symbolic_steps': symbolic_steps,
+            'diagnoses': diagnoses,
+            'raw_result': convert_to_serializable(result)  # Include raw MeTTa output
+        }
     except Exception as e:
         logger.error(f"Error in query_metta: {str(e)}")
         raise
@@ -122,11 +194,13 @@ def chat():
         user_message = data.get('message', '')
         logger.info(f"Received chat message: {user_message}")
 
-        # Extract symptoms from user message using GPT-4
+        # Extract symptoms using GPT-4
         symptom_extraction_prompt = f"""
         Extract medical symptoms from this message: "{user_message}"
         Return only the symptoms in the format: has_fever, has_cough, etc.
+        Use underscores between words and prefix with 'has_'.
         If no clear symptoms are mentioned, return an empty list.
+        Format each symptom exactly as it appears in medical terminology (e.g., has_shortness_of_breath for breathing difficulty).
         """
         
         user_proxy.initiate_chat(
@@ -138,17 +212,45 @@ def chat():
         symptoms_text = user_proxy.last_response
         symptoms = [s.strip() for s in symptoms_text.split(',') if s.strip()]
         
+        symbolic_results = None
         if symptoms:
-            # Get MeTTa diagnosis
-            metta_diagnosis = query_metta(symptoms, "current_patient")
+            # Get MeTTa symbolic reasoning results
+            symbolic_results = query_metta(symptoms, "current_patient")
+            
+            # Format symbolic reasoning steps for display
+            symbolic_output = "Symbolic Reasoning Steps:\n"
+            
+            # Show the symptoms we're working with
+            symbolic_output += "\nIdentified Symptoms:\n"
+            for symptom in symptoms:
+                symbolic_output += f"  • {symptom}\n"
+            
+            # Show the reasoning steps
+            symbolic_output += "\nReasoning Process:\n"
+            for step in symbolic_results['symbolic_steps']:
+                symbolic_output += f"\n• {step['step']}:\n"
+                for key, value in step.items():
+                    if key != 'step':
+                        symbolic_output += f"  - {key}: {value}\n"
             
             # Get GPT-4 analysis
             analysis_prompt = f"""
             Patient message: {user_message}
             Extracted symptoms: {symptoms}
-            MeTTa symbolic reasoning result: {metta_diagnosis}
             
-            Please provide a clear, human-readable diagnosis and recommendations.
+            Symbolic reasoning results:
+            {symbolic_output}
+            
+            Please provide a clear diagnosis analysis that:
+            1. Acknowledges the symbolic reasoning results above
+            2. Explains which rules were triggered and why
+            3. Provides additional insights beyond the rule-based system
+            4. Suggests a treatment plan
+            
+            Format your response with clear sections:
+            - Symbolic System Findings:
+            - Additional Neural Analysis:
+            - Treatment Recommendations:
             """
             
             user_proxy.initiate_chat(
@@ -157,11 +259,18 @@ def chat():
                 silent=True
             )
             
-            response = user_proxy.last_response
+            response = {
+                'symbolic_reasoning': symbolic_output,
+                'neural_analysis': user_proxy.last_response,
+                'raw_symbolic_data': convert_to_serializable(symbolic_results)
+            }
         else:
-            response = "I couldn't identify any specific medical symptoms in your message. Could you please describe your symptoms more clearly?"
+            response = {
+                'error': "No symptoms identified",
+                'message': "I couldn't identify any specific medical symptoms in your message. Could you please describe your symptoms more clearly?"
+            }
 
-        # Update chat history
+        # Update chat history with structured response
         chat_entry = {
             'user_message': user_message,
             'ai_response': response
