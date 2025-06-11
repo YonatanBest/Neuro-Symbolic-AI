@@ -211,6 +211,22 @@
   (-> (Inheritance $x back_pain)
       (Evaluation recommend_stretching_posture_heat $x))))
 
+!(add-reduct &kb (: asthma-treatment-rule 
+    (-> (Inheritance $x asthma)
+        (Treatment $x (use_inhaler avoid_triggers practice_breathing_exercises)))))
+
+!(add-reduct &kb (: asthma-medication-rule 
+    (-> (Inheritance $x asthma)
+        (Medication $x (quick_relief_inhaler long_term_control_inhaler oral_medications)))))
+
+!(add-reduct &kb (: asthma-lifestyle-rule 
+    (-> (Inheritance $x asthma)
+        (Lifestyle $x (avoid_smoke avoid_allergens exercise_regularly maintain_healthy_weight)))))
+
+!(add-reduct &kb (: asthma-monitoring-rule 
+    (-> (Inheritance $x asthma)
+        (Monitoring $x (track_symptoms use_peak_flow_meter regular_checkups)))))
+
 ; Add patient symptoms as facts
 ;!(add-atom &kb (: FACT1 (Evaluation has_shortness_of_breath current_patient)))
 ;!(add-atom &kb (: FACT2 (Evaluation has_wheezing current_patient)))

@@ -104,7 +104,7 @@ def query_metta(symptoms, patient):
         # Add symptoms as facts in the same format as symbolic.metta
         for i, symptom in enumerate(symptoms, start=1):
             fact = f'!(add-atom &kb (: FACT{i} (Evaluation {symptom} {patient})))'
-            logger.info(f"Adding fact: {fact}")  # Add logging to debug fact formation
+            logger.info(f"Adding fact: {fact}")
             metta.run(fact)
             symbolic_steps.append({
                 'step': 'Adding Symptom',
@@ -113,59 +113,53 @@ def query_metta(symptoms, patient):
         
         symbolic_steps.append({'step': 'Starting Diagnosis Query', 'details': 'Checking for conditions using symbolic rules'})
         
-        # Run forward chaining from first symptom, exactly as in symbolic.metta
+        # Run forward chaining from first symptom
         chain_query = f'!(fcc &kb (fromNumber 4) (: FACT1 (Evaluation {symptoms[0]} {patient})))'
-        logger.info(f"Running chain query: {chain_query}")  # Add logging for chain query
+        logger.info(f"Running chain query: {chain_query}")
         result = metta.run(chain_query)
         logger.info(f"Forward chaining result: {result}")
         
-        diagnoses = []
         if result:
             # Process the raw MeTTa output
             raw_output = convert_to_serializable(result)
+            
+            # Run additional chains for treatments if a diagnosis was found
+            if any('(Inheritance ' in str(r) for r in result):
+                # Query for treatments
+                treatment_result = metta.run(f'!(match &kb (Treatment {patient} $treatments) $treatments)')
+                if treatment_result:
+                    raw_output.extend(convert_to_serializable(treatment_result))
+                
+                # Query for medications
+                medication_result = metta.run(f'!(match &kb (Medication {patient} $medications) $medications)')
+                if medication_result:
+                    raw_output.extend(convert_to_serializable(medication_result))
+                
+                # Query for lifestyle recommendations
+                lifestyle_result = metta.run(f'!(match &kb (Lifestyle {patient} $lifestyle) $lifestyle)')
+                if lifestyle_result:
+                    raw_output.extend(convert_to_serializable(lifestyle_result))
+                
+                # Query for monitoring recommendations
+                monitoring_result = metta.run(f'!(match &kb (Monitoring {patient} $monitoring) $monitoring)')
+                if monitoring_result:
+                    raw_output.extend(convert_to_serializable(monitoring_result))
+            
             symbolic_steps.append({
                 'step': 'Raw Reasoning Chain',
                 'result': raw_output
             })
             
-            # Extract diagnoses from the reasoning chain
-            for chain_result in result:
-                if isinstance(chain_result, str) and '(Inheritance ' in chain_result:
-                    # Extract condition from the result
-                    condition = str(chain_result).split(' ')[-1].rstrip(')')
-                    if condition not in diagnoses:
-                        diagnoses.append(condition)
-                        symbolic_steps.append({
-                            'step': 'Found Condition',
-                            'result': f'Diagnosed condition: {condition}'
-                        })
-        
-        if diagnoses:
-            symbolic_steps.append({
-                'step': 'Conditions Found',
-                'result': diagnoses
-            })
-            
-            # Look up treatments using the rules from symbolic.metta
-            for diagnosis in diagnoses:
-                treatment_query = f'!(match &kb (-> (Inheritance {patient} {diagnosis}) (Evaluation $treatment {patient})) $treatment)'
-                treatment = metta.run(treatment_query)
-                if treatment:
-                    symbolic_steps.append({
-                        'step': 'Treatment Found',
-                        'condition': diagnosis,
-                        'treatment': convert_to_serializable(treatment)
-                    })
-        else:
-            symbolic_steps.append({
-                'step': 'Diagnosis Result',
-                'details': 'No matching conditions found in knowledge base'
-            })
+            # Run additional chains if needed
+            for i, symptom in enumerate(symptoms[1:], start=2):
+                chain_query = f'!(fcc &kb (fromNumber 4) (: FACT{i} (Evaluation {symptom} {patient})))'
+                chain_result = metta.run(chain_query)
+                if chain_result:
+                    raw_output.extend(convert_to_serializable(chain_result))
         
         return {
             'symbolic_steps': symbolic_steps,
-            'diagnoses': diagnoses,
-            'raw_result': convert_to_serializable(result)  # Include raw MeTTa output
+            'raw_result': convert_to_serializable(result)
         }
     except Exception as e:
         logger.error(f"Error in query_metta: {str(e)}")
@@ -217,11 +211,8 @@ def chat():
             # Get MeTTa symbolic reasoning results
             symbolic_results = query_metta(symptoms, "current_patient")
             
-            # Format symbolic reasoning steps for display
-            symbolic_output = "Symbolic Reasoning Steps:\n"
-            
             # Show the symptoms we're working with
-            symbolic_output += "\nIdentified Symptoms:\n"
+            symbolic_output = "\nIdentified Symptoms:\n"
             for symptom in symptoms:
                 symbolic_output += f"  • {symptom}\n"
             
@@ -235,22 +226,33 @@ def chat():
             
             # Get GPT-4 analysis
             analysis_prompt = f"""
-            Patient message: {user_message}
-            Extracted symptoms: {symptoms}
+            You are a friendly and knowledgeable doctor explaining the results of a medical diagnosis system to a patient.
             
-            Symbolic reasoning results:
+            The patient reported these symptoms: {user_message}
+
+            Our medical reasoning system analyzed these symptoms and here's what it found:
+
             {symbolic_output}
+
+            The reasoning chain shows:
+            {symbolic_results['raw_result']}
+
+            Please explain this to the patient in a friendly, clear way that:
+            1. Acknowledges their symptoms
+            2. Explains what our system found (in simple terms)
+            3. Explains why this makes sense medically
+            4. Suggests what they should do next
+
+            Use a warm, caring tone and avoid technical jargon. Break down the medical reasoning in a way that's easy to understand.
+            Start with something like "I've carefully looked at your symptoms..." and guide them through your thinking.
             
-            Please provide a clear diagnosis analysis that:
-            1. Acknowledges the symbolic reasoning results above
-            2. Explains which rules were triggered and why
-            3. Provides additional insights beyond the rule-based system
-            4. Suggests a treatment plan
-            
-            Format your response with clear sections:
-            - Symbolic System Findings:
-            - Additional Neural Analysis:
-            - Treatment Recommendations:
+            Make sure to explain:
+            - How their symptoms connect to each other
+            - Why these symptoms suggest this particular condition
+            - What treatments might help and why
+            - What they should do next
+
+            End with a caring reminder that while our system can help identify possible conditions, they should see a healthcare provider for a proper diagnosis.
             """
             
             user_proxy.initiate_chat(
@@ -262,7 +264,7 @@ def chat():
             response = {
                 'symbolic_reasoning': symbolic_output,
                 'neural_analysis': user_proxy.last_response,
-                'raw_symbolic_data': convert_to_serializable(symbolic_results)
+                'raw_symbolic_data': symbolic_results['raw_result']
             }
         else:
             response = {
@@ -270,7 +272,7 @@ def chat():
                 'message': "I couldn't identify any specific medical symptoms in your message. Could you please describe your symptoms more clearly?"
             }
 
-        # Update chat history with structured response
+        # Update chat history
         chat_entry = {
             'user_message': user_message,
             'ai_response': response
