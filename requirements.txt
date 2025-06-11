@@ -1,0 +1,7 @@
+hyperon
+flask
+openai
+python-dotenv
+autogen
+requests 
+flask_cors

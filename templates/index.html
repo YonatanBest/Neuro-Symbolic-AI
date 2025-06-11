@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical AI Assistant</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        .chat-container {
+            height: 500px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .user-message {
+            background-color: #e3f2fd;
+            margin-left: 20%;
+        }
+        .ai-message {
+            background-color: #f5f5f5;
+            margin-right: 20%;
+            white-space: pre-line;
+        }
+        .symbolic-reasoning {
+            font-family: monospace;
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+            padding-top: 5px;
+            border-top: 1px dashed #ddd;
+        }
+        .input-container {
+            display: flex;
+            gap: 10px;
+        }
+        #userInput {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #1976D2;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Medical AI Assistant</h1>
+        <div class="chat-container" id="chatContainer">
+            {% for message in chat_history %}
+            <div class="message user-message">{{ message.user_message }}</div>
+            <div class="message ai-message">
+                {{ message.ai_response }}
+                {% if message.symbolic_reasoning %}
+                <div class="symbolic-reasoning">
+                    Raw symbolic reasoning: {{ message.symbolic_reasoning }}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="loading" id="loading">Processing your message...</div>
+        <div class="input-container">
+            <input type="text" id="userInput" placeholder="Describe your symptoms...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        function scrollToBottom() {
+            const chatContainer = document.getElementById('chatContainer');
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function appendMessage(message, isUser, symbolicReasoning = null) {
+            const chatContainer = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+            
+            if (isUser) {
+                messageDiv.textContent = message;
+            } else {
+                messageDiv.textContent = message;
+                if (symbolicReasoning) {
+                    const symbolicDiv = document.createElement('div');
+                    symbolicDiv.className = 'symbolic-reasoning';
+                    symbolicDiv.textContent = 'Raw symbolic reasoning: ' + symbolicReasoning;
+                    messageDiv.appendChild(symbolicDiv);
+                }
+            }
+            
+            chatContainer.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        function sendMessage() {
+            const userInput = document.getElementById('userInput');
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            // Display user message
+            appendMessage(message, true);
+            userInput.value = '';
+
+            // Show loading indicator
+            document.getElementById('loading').style.display = 'block';
+
+            // Send to backend
+            fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    appendMessage('Error: ' + data.error, false);
+                } else {
+                    appendMessage(data.response, false, data.symbolic_reasoning);
+                }
+            })
+            .catch(error => {
+                appendMessage('Error: Could not process your request', false);
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                document.getElementById('loading').style.display = 'none';
+            });
+        }
+
+        // Allow sending message with Enter key
+        document.getElementById('userInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Scroll to bottom on load
+        scrollToBottom();
+    </script>
+</body>
+</html> 
