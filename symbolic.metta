@@ -138,79 +138,9 @@
       (-> (Evaluation has_sharp_back_pain $x)
           (Inheritance $x back_pain)))))
 
-; Treatment Rules
-!(add-reduct &kb (: treat-flu 
-  (-> (Inheritance $x flu)
-      (Evaluation recommend_rest_and_fluids $x))))
+;; Treatment Rules
 
-!(add-reduct &kb (: treat-covid 
-  (-> (Inheritance $x covid_19)
-      (Evaluation recommend_isolation_and_testing $x))))
-
-!(add-reduct &kb (: treat-cold 
-  (-> (Inheritance $x common_cold)
-      (Evaluation recommend_rest_and_hydration $x))))
-
-!(add-reduct &kb (: treat-common-cold
-  (-> (Inheritance $x common_cold)
-      (Evaluation recommend_warm_fluids_rest_steam $x))))
-
-!(add-reduct &kb (: treat-asthma 
-  (-> (Inheritance $x asthma)
-      (Evaluation recommend_inhaler_and_breathing_exercises $x))))
-
-!(add-reduct &kb (: treat-diabetes
-  (-> (Inheritance $x diabetes)
-      (Evaluation recommend_diet_exercise_monitoring $x))))
-
-!(add-reduct &kb (: treat-hypertension
-  (-> (Inheritance $x hypertension)
-      (Evaluation recommend_dash_diet_stress_reduction $x))))
-
-!(add-reduct &kb (: treat-acid-reflux
-  (-> (Inheritance $x acid_reflux)
-      (Evaluation recommend_dietary_changes_elevation $x))))
-
-!(add-reduct &kb (: treat-insomnia
-  (-> (Inheritance $x insomnia)
-      (Evaluation recommend_sleep_hygiene_routine $x))))
-
-!(add-reduct &kb (: treat-depression
-  (-> (Inheritance $x depression)
-      (Evaluation recommend_exercise_therapy_sunlight $x))))
-
-!(add-reduct &kb (: treat-anxiety
-  (-> (Inheritance $x anxiety)
-      (Evaluation recommend_breathing_mindfulness_exercise $x))))
-
-!(add-reduct &kb (: treat-arthritis
-  (-> (Inheritance $x arthritis)
-      (Evaluation recommend_gentle_exercise_heat_therapy $x))))
-
-!(add-reduct &kb (: treat-ibs
-  (-> (Inheritance $x ibs)
-      (Evaluation recommend_diet_modification_stress_management $x))))
-
-!(add-reduct &kb (: treat-migraine
-  (-> (Inheritance $x migraine)
-      (Evaluation recommend_trigger_avoidance_cold_compress $x))))
-
-!(add-reduct &kb (: treat-seasonal-allergies
-  (-> (Inheritance $x seasonal_allergies)
-      (Evaluation recommend_avoidance_nasal_rinse $x))))
-
-!(add-reduct &kb (: treat-constipation
-  (-> (Inheritance $x constipation)
-      (Evaluation recommend_fiber_hydration_exercise $x))))
-
-!(add-reduct &kb (: treat-eczema
-  (-> (Inheritance $x eczema)
-      (Evaluation recommend_moisturize_avoid_triggers $x))))
-
-!(add-reduct &kb (: treat-back-pain
-  (-> (Inheritance $x back_pain)
-      (Evaluation recommend_stretching_posture_heat $x))))
-
+;; Treatment Rules for Asthma
 !(add-reduct &kb (: asthma-treatment-rule 
     (-> (Inheritance $x asthma)
         (Treatment $x (use_inhaler avoid_triggers practice_breathing_exercises)))))
@@ -226,6 +156,278 @@
 !(add-reduct &kb (: asthma-monitoring-rule 
     (-> (Inheritance $x asthma)
         (Monitoring $x (track_symptoms use_peak_flow_meter regular_checkups)))))
+
+;; Treatment Rules for Flu
+!(add-reduct &kb (: flu-treatment-rule 
+    (-> (Inheritance $x flu)
+        (Treatment $x (rest hydration otc_pain_relievers antiviral_medications)))))
+
+!(add-reduct &kb (: flu-medication-rule 
+    (-> (Inheritance $x flu)
+        (Medication $x (acetaminophen ibuprofen oseltamivir zanamivir)))))
+
+!(add-reduct &kb (: flu-lifestyle-rule 
+    (-> (Inheritance $x flu)
+        (Lifestyle $x (stay_home rest sleep_well avoid_contact)))))
+
+!(add-reduct &kb (: flu-monitoring-rule 
+    (-> (Inheritance $x flu)
+        (Monitoring $x (check_temperature watch_symptoms seek_help_if_worsening)))))
+
+;; Treatment Rules for COVID-19
+!(add-reduct &kb (: covid-treatment-rule 
+    (-> (Inheritance $x covid_19)
+        (Treatment $x (isolation supportive_care oxygen_therapy antiviral_therapy)))))
+
+!(add-reduct &kb (: covid-medication-rule 
+    (-> (Inheritance $x covid_19)
+        (Medication $x (antipyretics pain_relievers prescribed_antivirals monoclonal_antibodies)))))
+
+!(add-reduct &kb (: covid-lifestyle-rule 
+    (-> (Inheritance $x covid_19)
+        (Lifestyle $x (strict_isolation rest hydration monitor_oxygen_levels)))))
+
+!(add-reduct &kb (: covid-monitoring-rule 
+    (-> (Inheritance $x covid_19)
+        (Monitoring $x (pulse_oximeter temperature_checks symptom_diary emergency_signs)))))
+
+;; Treatment Rules for Common Cold
+!(add-reduct &kb (: cold-treatment-rule 
+    (-> (Inheritance $x common_cold)
+        (Treatment $x (rest hydration otc_medications steam_inhalation)))))
+
+!(add-reduct &kb (: cold-medication-rule 
+    (-> (Inheritance $x common_cold)
+        (Medication $x (decongestants antihistamines cough_suppressants zinc_supplements)))))
+
+!(add-reduct &kb (: cold-lifestyle-rule 
+    (-> (Inheritance $x common_cold)
+        (Lifestyle $x (rest sleep gargle_saltwater humidifier)))))
+
+!(add-reduct &kb (: cold-monitoring-rule 
+    (-> (Inheritance $x common_cold)
+        (Monitoring $x (track_duration watch_fever check_congestion)))))
+
+;; Treatment Rules for Diabetes
+!(add-reduct &kb (: diabetes-treatment-rule 
+    (-> (Inheritance $x diabetes)
+        (Treatment $x (blood_sugar_monitoring insulin_therapy diet_management exercise_program)))))
+
+!(add-reduct &kb (: diabetes-medication-rule 
+    (-> (Inheritance $x diabetes)
+        (Medication $x (insulin metformin sulfonylureas glp1_agonists)))))
+
+!(add-reduct &kb (: diabetes-lifestyle-rule 
+    (-> (Inheritance $x diabetes)
+        (Lifestyle $x (healthy_diet regular_exercise weight_management stress_reduction)))))
+
+!(add-reduct &kb (: diabetes-monitoring-rule 
+    (-> (Inheritance $x diabetes)
+        (Monitoring $x (blood_glucose_checks a1c_tests foot_checks eye_exams)))))
+
+;; Treatment Rules for Hypertension
+!(add-reduct &kb (: hypertension-treatment-rule 
+    (-> (Inheritance $x hypertension)
+        (Treatment $x (blood_pressure_monitoring medication_management dietary_changes stress_reduction)))))
+
+!(add-reduct &kb (: hypertension-medication-rule 
+    (-> (Inheritance $x hypertension)
+        (Medication $x (ace_inhibitors beta_blockers diuretics calcium_channel_blockers)))))
+
+!(add-reduct &kb (: hypertension-lifestyle-rule 
+    (-> (Inheritance $x hypertension)
+        (Lifestyle $x (reduce_sodium exercise_regularly limit_alcohol maintain_healthy_weight)))))
+
+!(add-reduct &kb (: hypertension-monitoring-rule 
+    (-> (Inheritance $x hypertension)
+        (Monitoring $x (daily_bp_readings diet_tracking exercise_log medication_compliance)))))
+
+;; Treatment Rules for Acid Reflux
+!(add-reduct &kb (: acid-reflux-treatment-rule 
+    (-> (Inheritance $x acid_reflux)
+        (Treatment $x (dietary_modifications elevation_while_sleeping antacids lifestyle_changes)))))
+
+!(add-reduct &kb (: acid-reflux-medication-rule 
+    (-> (Inheritance $x acid_reflux)
+        (Medication $x (proton_pump_inhibitors h2_blockers antacids alginates)))))
+
+!(add-reduct &kb (: acid-reflux-lifestyle-rule 
+    (-> (Inheritance $x acid_reflux)
+        (Lifestyle $x (avoid_trigger_foods eat_smaller_meals no_late_eating elevate_head_of_bed)))))
+
+!(add-reduct &kb (: acid-reflux-monitoring-rule 
+    (-> (Inheritance $x acid_reflux)
+        (Monitoring $x (track_trigger_foods symptom_diary weight_management)))))
+
+;; Treatment Rules for Insomnia
+!(add-reduct &kb (: insomnia-treatment-rule 
+    (-> (Inheritance $x insomnia)
+        (Treatment $x (sleep_hygiene cognitive_behavioral_therapy relaxation_techniques medication)))))
+
+!(add-reduct &kb (: insomnia-medication-rule 
+    (-> (Inheritance $x insomnia)
+        (Medication $x (sleep_medications melatonin antihistamines prescription_sleep_aids)))))
+
+!(add-reduct &kb (: insomnia-lifestyle-rule 
+    (-> (Inheritance $x insomnia)
+        (Lifestyle $x (regular_sleep_schedule avoid_screens limit_caffeine exercise_early)))))
+
+!(add-reduct &kb (: insomnia-monitoring-rule 
+    (-> (Inheritance $x insomnia)
+        (Monitoring $x (sleep_diary sleep_quality_tracking daytime_symptoms)))))
+
+;; Treatment Rules for Depression
+!(add-reduct &kb (: depression-treatment-rule 
+    (-> (Inheritance $x depression)
+        (Treatment $x (psychotherapy medication_management lifestyle_changes support_groups)))))
+
+!(add-reduct &kb (: depression-medication-rule 
+    (-> (Inheritance $x depression)
+        (Medication $x (ssris snris ndris mood_stabilizers)))))
+
+!(add-reduct &kb (: depression-lifestyle-rule 
+    (-> (Inheritance $x depression)
+        (Lifestyle $x (regular_exercise social_connection sunlight_exposure healthy_diet)))))
+
+!(add-reduct &kb (: depression-monitoring-rule 
+    (-> (Inheritance $x depression)
+        (Monitoring $x (mood_tracking symptom_diary therapy_progress medication_effects)))))
+
+;; Treatment Rules for Anxiety
+!(add-reduct &kb (: anxiety-treatment-rule 
+    (-> (Inheritance $x anxiety)
+        (Treatment $x (psychotherapy medication relaxation_techniques mindfulness)))))
+
+!(add-reduct &kb (: anxiety-medication-rule 
+    (-> (Inheritance $x anxiety)
+        (Medication $x (ssris benzodiazepines buspirone beta_blockers)))))
+
+!(add-reduct &kb (: anxiety-lifestyle-rule 
+    (-> (Inheritance $x anxiety)
+        (Lifestyle $x (stress_management regular_exercise meditation healthy_sleep)))))
+
+!(add-reduct &kb (: anxiety-monitoring-rule 
+    (-> (Inheritance $x anxiety)
+        (Monitoring $x (anxiety_levels trigger_tracking coping_strategies_effectiveness)))))
+
+;; Treatment Rules for Arthritis
+!(add-reduct &kb (: arthritis-treatment-rule 
+    (-> (Inheritance $x arthritis)
+        (Treatment $x (physical_therapy medication pain_management joint_protection)))))
+
+!(add-reduct &kb (: arthritis-medication-rule 
+    (-> (Inheritance $x arthritis)
+        (Medication $x (nsaids dmards corticosteroids biologics)))))
+
+!(add-reduct &kb (: arthritis-lifestyle-rule 
+    (-> (Inheritance $x arthritis)
+        (Lifestyle $x (gentle_exercise weight_management joint_care assistive_devices)))))
+
+!(add-reduct &kb (: arthritis-monitoring-rule 
+    (-> (Inheritance $x arthritis)
+        (Monitoring $x (pain_levels joint_mobility medication_effectiveness)))))
+
+;; Treatment Rules for IBS
+!(add-reduct &kb (: ibs-treatment-rule 
+    (-> (Inheritance $x ibs)
+        (Treatment $x (dietary_management stress_reduction medication gut_health_support)))))
+
+!(add-reduct &kb (: ibs-medication-rule 
+    (-> (Inheritance $x ibs)
+        (Medication $x (antispasmodics laxatives antidiarrheals probiotics)))))
+
+!(add-reduct &kb (: ibs-lifestyle-rule 
+    (-> (Inheritance $x ibs)
+        (Lifestyle $x (fodmap_diet stress_management regular_exercise adequate_hydration)))))
+
+!(add-reduct &kb (: ibs-monitoring-rule 
+    (-> (Inheritance $x ibs)
+        (Monitoring $x (symptom_diary food_diary stress_levels bowel_habits)))))
+
+;; Treatment Rules for Migraine
+!(add-reduct &kb (: migraine-treatment-rule 
+    (-> (Inheritance $x migraine)
+        (Treatment $x (acute_medication preventive_therapy trigger_avoidance stress_management)))))
+
+!(add-reduct &kb (: migraine-medication-rule 
+    (-> (Inheritance $x migraine)
+        (Medication $x (triptans nsaids preventive_medications antiemetics)))))
+
+!(add-reduct &kb (: migraine-lifestyle-rule 
+    (-> (Inheritance $x migraine)
+        (Lifestyle $x (regular_sleep stress_reduction trigger_avoidance hydration)))))
+
+!(add-reduct &kb (: migraine-monitoring-rule 
+    (-> (Inheritance $x migraine)
+        (Monitoring $x (headache_diary trigger_tracking medication_effectiveness)))))
+
+;; Treatment Rules for Seasonal Allergies
+!(add-reduct &kb (: allergy-treatment-rule 
+    (-> (Inheritance $x seasonal_allergies)
+        (Treatment $x (medication allergen_avoidance nasal_irrigation immunotherapy)))))
+
+!(add-reduct &kb (: allergy-medication-rule 
+    (-> (Inheritance $x seasonal_allergies)
+        (Medication $x (antihistamines decongestants nasal_steroids eye_drops)))))
+
+!(add-reduct &kb (: allergy-lifestyle-rule 
+    (-> (Inheritance $x seasonal_allergies)
+        (Lifestyle $x (monitor_pollen_levels keep_windows_closed use_air_purifiers shower_after_outdoors)))))
+
+!(add-reduct &kb (: allergy-monitoring-rule 
+    (-> (Inheritance $x seasonal_allergies)
+        (Monitoring $x (symptom_tracking pollen_forecasts medication_effectiveness)))))
+
+;; Treatment Rules for Constipation
+!(add-reduct &kb (: constipation-treatment-rule 
+    (-> (Inheritance $x constipation)
+        (Treatment $x (dietary_changes hydration medication exercise)))))
+
+!(add-reduct &kb (: constipation-medication-rule 
+    (-> (Inheritance $x constipation)
+        (Medication $x (fiber_supplements stool_softeners osmotic_laxatives stimulant_laxatives)))))
+
+!(add-reduct &kb (: constipation-lifestyle-rule 
+    (-> (Inheritance $x constipation)
+        (Lifestyle $x (high_fiber_diet regular_exercise adequate_hydration bathroom_routine)))))
+
+!(add-reduct &kb (: constipation-monitoring-rule 
+    (-> (Inheritance $x constipation)
+        (Monitoring $x (bowel_movement_diary dietary_tracking hydration_levels)))))
+
+;; Treatment Rules for Eczema
+!(add-reduct &kb (: eczema-treatment-rule 
+    (-> (Inheritance $x eczema)
+        (Treatment $x (moisturizing trigger_avoidance medication skin_care)))))
+
+!(add-reduct &kb (: eczema-medication-rule 
+    (-> (Inheritance $x eczema)
+        (Medication $x (topical_steroids immunosuppressants antihistamines moisturizers)))))
+
+!(add-reduct &kb (: eczema-lifestyle-rule 
+    (-> (Inheritance $x eczema)
+        (Lifestyle $x (gentle_skin_care avoid_triggers humidity_control stress_management)))))
+
+!(add-reduct &kb (: eczema-monitoring-rule 
+    (-> (Inheritance $x eczema)
+        (Monitoring $x (skin_condition_tracking trigger_diary treatment_effectiveness)))))
+
+;; Treatment Rules for Back Pain
+!(add-reduct &kb (: back-pain-treatment-rule 
+    (-> (Inheritance $x back_pain)
+        (Treatment $x (physical_therapy pain_management exercise posture_correction)))))
+
+!(add-reduct &kb (: back-pain-medication-rule 
+    (-> (Inheritance $x back_pain)
+        (Medication $x (nsaids muscle_relaxants topical_treatments pain_relievers)))))
+
+!(add-reduct &kb (: back-pain-lifestyle-rule 
+    (-> (Inheritance $x back_pain)
+        (Lifestyle $x (proper_posture ergonomic_adjustments core_strengthening weight_management)))))
+
+!(add-reduct &kb (: back-pain-monitoring-rule 
+    (-> (Inheritance $x back_pain)
+        (Monitoring $x (pain_levels activity_impact treatment_effectiveness)))))
 
 ; Add patient symptoms as facts
 ;!(add-atom &kb (: FACT1 (Evaluation has_shortness_of_breath current_patient)))

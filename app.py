@@ -252,6 +252,9 @@ def chat():
             - What treatments might help and why
             - What they should do next
 
+            Disease:
+            More information about the disease:
+            Treatment:
             End with a caring reminder that while our system can help identify possible conditions, they should see a healthcare provider for a proper diagnosis.
             """
             
