@@ -237,26 +237,29 @@ def chat():
             The reasoning chain shows:
             {symbolic_results['raw_result']}
 
-            Please explain this to the patient in a friendly, clear way that:
-            1. Acknowledges their symptoms
-            2. Explains what our system found (in simple terms)
-            3. Explains why this makes sense medically
-            4. Suggests what they should do next
-
-            Use a warm, caring tone and avoid technical jargon. Break down the medical reasoning in a way that's easy to understand.
-            Start with something like "I've carefully looked at your symptoms..." and guide them through your thinking.
-            
-            Make sure to explain:
-            - How their symptoms connect to each other
-            - Why these symptoms suggest this particular condition
-            - What treatments might help and why
-            - What they should do next
+            Please provide your analysis in the following structured format:
 
             Disease:
-            More information about the disease:
+            - Name of the identified condition
+            - Confidence level in the diagnosis
+
+            More Information:
+            - Brief description of the condition
+            - How the symptoms relate to the diagnosis
+            - Common causes and risk factors
+            - Typical duration and progression
+
             Treatment:
-            End with a caring reminder that while our system can help identify possible conditions, they should see a healthcare provider for a proper diagnosis.
-            """
+            - Immediate steps to take
+            - Recommended medications
+            - Lifestyle changes
+            - Monitoring requirements
+            - When to seek emergency care
+
+            Important Note:
+            While our AI system can help identify possible conditions, this is not a substitute for professional medical care. Please consult with a healthcare provider for proper diagnosis and treatment.
+
+            Use a warm, caring tone and avoid technical jargon. Break down the medical reasoning in a way that's easy to understand."""
             
             user_proxy.initiate_chat(
                 assistant,
