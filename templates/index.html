@@ -135,18 +135,24 @@
                 {% if message.ai_response.error %}
                     <div class="error-message">{{ message.ai_response.message }}</div>
                 {% else %}
-                    {% if message.ai_response.symbolic_reasoning %}
-                    <div class="symbolic-section">
-                        <div class="section-title">Symbolic Reasoning Steps:</div>
-                        {{ message.ai_response.symbolic_reasoning }}
-                    </div>
-                    {% endif %}
-                    
-                    {% if message.ai_response.neural_analysis %}
-                    <div class="neural-section">
-                        <div class="section-title">Neural Analysis:</div>
-                        {{ message.ai_response.neural_analysis }}
-                    </div>
+                    {% if message.ai_response.type == 'non_medical' %}
+                        <div class="neural-section">
+                            {{ message.ai_response.response }}
+                        </div>
+                    {% else %}
+                        {% if message.ai_response.symbolic_reasoning %}
+                        <div class="symbolic-section">
+                            <div class="section-title">Symbolic Reasoning Steps:</div>
+                            {{ message.ai_response.symbolic_reasoning }}
+                        </div>
+                        {% endif %}
+                        
+                        {% if message.ai_response.neural_analysis %}
+                        <div class="neural-section">
+                            <div class="section-title">Neural Analysis:</div>
+                            {{ message.ai_response.neural_analysis }}
+                        </div>
+                        {% endif %}
                     {% endif %}
                 {% endif %}
             </div>
@@ -154,7 +160,7 @@
         </div>
         <div class="loading" id="loading">Processing your message...</div>
         <div class="input-container">
-            <input type="text" id="userInput" placeholder="Describe your symptoms...">
+            <input type="text" id="userInput" placeholder="Ask me anything - I can help with medical and general questions...">
             <button onclick="sendMessage()">Send</button>
         </div>
     </div>
@@ -178,7 +184,14 @@
                     errorDiv.className = 'error-message';
                     errorDiv.textContent = message.message;
                     messageDiv.appendChild(errorDiv);
+                } else if (message.type === 'non_medical') {
+                    // Non-medical response
+                    const responseDiv = document.createElement('div');
+                    responseDiv.className = 'neural-section';
+                    responseDiv.textContent = message.response;
+                    messageDiv.appendChild(responseDiv);
                 } else {
+                    // Medical response
                     // Symbolic Reasoning Section
                     if (message.symbolic_reasoning) {
                         const symbolicDiv = document.createElement('div');

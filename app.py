@@ -56,11 +56,25 @@ assistant = autogen.AssistantAgent(
         "temperature": 0.7,
         "max_tokens": 500,
     },
-    system_message="""You are a medical expert who helps diagnose conditions based on symptoms.
-    Analyze the patient's symptoms and provide a clear diagnosis.
-    Consider both the symbolic reasoning results from MeTTa and the symptoms provided.
-    Format your response in a clear, structured way.
-    Respond directly without asking follow-up questions."""
+    system_message="""You are a knowledgeable AI assistant with medical expertise. Your primary role is to help diagnose conditions based on symptoms, but you can also engage in general conversation and answer non-medical questions.
+
+    For medical queries:
+    - Analyze symptoms and provide clear diagnoses
+    - Consider both symbolic reasoning results from MeTTa and the symptoms provided
+    - Format medical responses in a clear, structured way
+    - Include appropriate medical disclaimers
+
+    For non-medical queries:
+    - Respond naturally and informatively
+    - Draw from your general knowledge
+    - Maintain a helpful and professional tone
+    - Make it clear that you're stepping outside the medical domain
+
+    Always:
+    - Be direct and concise
+    - Stay within your knowledge boundaries
+    - Maintain a professional yet friendly tone
+    """
 )
 
 class WebUserProxyAgent(autogen.UserProxyAgent):
@@ -188,94 +202,140 @@ def chat():
         user_message = data.get('message', '')
         logger.info(f"Received chat message: {user_message}")
 
-        # Extract symptoms using GPT-4
-        symptom_extraction_prompt = f"""
-        Extract medical symptoms from this message: "{user_message}"
-        Return only the symptoms in the format: has_fever, has_cough, etc.
-        Use underscores between words and prefix with 'has_'.
-        If no clear symptoms are mentioned, return an empty list.
-        Format each symptom exactly as it appears in medical terminology (e.g., has_shortness_of_breath for breathing difficulty).
+        # First, determine if this is a medical query
+        query_type_prompt = f"""
+        Analyze if this message is asking for medical advice or diagnosis: "{user_message}"
+        Return ONLY 'medical' or 'non_medical'.
+        Consider it medical if it mentions:
+        - Symptoms
+        - Health conditions
+        - Medical treatments
+        - Health concerns
+        Otherwise, return non_medical.
         """
-        
+
         user_proxy.initiate_chat(
             assistant,
-            message=symptom_extraction_prompt,
+            message=query_type_prompt,
             silent=True
         )
         
-        symptoms_text = user_proxy.last_response
-        symptoms = [s.strip() for s in symptoms_text.split(',') if s.strip()]
-        
-        symbolic_results = None
-        if symptoms:
-            # Get MeTTa symbolic reasoning results
-            symbolic_results = query_metta(symptoms, "current_patient")
-            
-            # Show the symptoms we're working with
-            symbolic_output = "\nIdentified Symptoms:\n"
-            for symptom in symptoms:
-                symbolic_output += f"  • {symptom}\n"
-            
-            # Show the reasoning steps
-            symbolic_output += "\nReasoning Process:\n"
-            for step in symbolic_results['symbolic_steps']:
-                symbolic_output += f"\n• {step['step']}:\n"
-                for key, value in step.items():
-                    if key != 'step':
-                        symbolic_output += f"  - {key}: {value}\n"
-            
-            # Get GPT-4 analysis
-            analysis_prompt = f"""
-            You are a friendly and knowledgeable doctor explaining the results of a medical diagnosis system to a patient.
-            
-            The patient reported these symptoms: {user_message}
+        query_type = user_proxy.last_response.strip().lower()
 
-            Our medical reasoning system analyzed these symptoms and here's what it found:
-
-            {symbolic_output}
-
-            The reasoning chain shows:
-            {symbolic_results['raw_result']}
-
-            Please provide your analysis in the following structured format:
-
-            Disease:
-            - Name of the identified condition
-            - Confidence level in the diagnosis
-
-            More Information:
-            - Brief description of the condition
-            - How the symptoms relate to the diagnosis
-            - Common causes and risk factors
-            - Typical duration and progression
-
-            Treatment:
-            - Immediate steps to take
-            - Recommended medications
-            - Lifestyle changes
-            - Monitoring requirements
-            - When to seek emergency care
-
-            Important Note:
-            While our AI system can help identify possible conditions, this is not a substitute for professional medical care. Please consult with a healthcare provider for proper diagnosis and treatment.
-
-            Use a warm, caring tone and avoid technical jargon. Break down the medical reasoning in a way that's easy to understand."""
+        if query_type == 'medical':
+            # Extract symptoms using GPT-4
+            symptom_extraction_prompt = f"""
+            Extract medical symptoms from this message: "{user_message}"
+            Return only the symptoms in the format: has_fever, has_cough, etc.
+            Use underscores between words and prefix with 'has_'.
+            If no clear symptoms are mentioned, return an empty list.
+            Format each symptom exactly as it appears in medical terminology (e.g., has_shortness_of_breath for breathing difficulty).
+            """
             
             user_proxy.initiate_chat(
                 assistant,
-                message=analysis_prompt,
+                message=symptom_extraction_prompt,
                 silent=True
             )
             
-            response = {
-                'symbolic_reasoning': symbolic_output,
-                'neural_analysis': user_proxy.last_response,
-                'raw_symbolic_data': symbolic_results['raw_result']
-            }
+            symptoms_text = user_proxy.last_response
+            symptoms = [s.strip() for s in symptoms_text.split(',') if s.strip()]
+            
+            symbolic_results = None
+            if symptoms:
+                # Get MeTTa symbolic reasoning results
+                symbolic_results = query_metta(symptoms, "current_patient")
+                
+                # Show the symptoms we're working with
+                symbolic_output = "\nIdentified Symptoms:\n"
+                for symptom in symptoms:
+                    symbolic_output += f"  • {symptom}\n"
+                
+                # Show the reasoning steps
+                symbolic_output += "\nReasoning Process:\n"
+                for step in symbolic_results['symbolic_steps']:
+                    symbolic_output += f"\n• {step['step']}:\n"
+                    for key, value in step.items():
+                        if key != 'step':
+                            symbolic_output += f"  - {key}: {value}\n"
+                
+                # Get GPT-4 analysis
+                analysis_prompt = f"""
+                You are a friendly and knowledgeable doctor explaining the results of a medical diagnosis system to a patient.
+                
+                The patient reported these symptoms: {user_message}
+
+                Our medical reasoning system analyzed these symptoms and here's what it found:
+
+                {symbolic_output}
+
+                The reasoning chain shows:
+                {symbolic_results['raw_result']}
+
+                Please provide your analysis in the following structured format:
+
+                Disease:
+                - Name of the identified condition
+                - Confidence level in the diagnosis
+
+                More Information:
+                - Brief description of the condition
+                - How the symptoms relate to the diagnosis
+                - Common causes and risk factors
+                - Typical duration and progression
+
+                Treatment:
+                - Immediate steps to take
+                - Recommended medications
+                - Lifestyle changes
+                - Monitoring requirements
+                - When to seek emergency care
+
+                Important Note:
+                While our AI system can help identify possible conditions, this is not a substitute for professional medical care. Please consult with a healthcare provider for proper diagnosis and treatment.
+
+                Use a warm, caring tone and avoid technical jargon. Break down the medical reasoning in a way that's easy to understand."""
+                
+                user_proxy.initiate_chat(
+                    assistant,
+                    message=analysis_prompt,
+                    silent=True
+                )
+                
+                response = {
+                    'type': 'medical',
+                    'symbolic_reasoning': symbolic_output,
+                    'neural_analysis': user_proxy.last_response,
+                    'raw_symbolic_data': symbolic_results['raw_result']
+                }
+            else:
+                response = {
+                    'type': 'medical',
+                    'error': "No symptoms identified",
+                    'message': "I couldn't identify any specific medical symptoms in your message. Could you please describe your symptoms more clearly?"
+                }
         else:
+            # Handle non-medical query
+            general_prompt = f"""
+            The user has asked a non-medical question: "{user_message}"
+            
+            Please provide a helpful response while:
+            1. Making it clear you're answering as a general AI assistant
+            2. Drawing from your general knowledge to provide accurate information
+            3. Maintaining a professional yet conversational tone
+            4. Staying within the bounds of your knowledge and capabilities
+            
+            If the query is unclear or too broad, ask for clarification."""
+
+            user_proxy.initiate_chat(
+                assistant,
+                message=general_prompt,
+                silent=True
+            )
+
             response = {
-                'error': "No symptoms identified",
-                'message': "I couldn't identify any specific medical symptoms in your message. Could you please describe your symptoms more clearly?"
+                'type': 'non_medical',
+                'response': user_proxy.last_response
             }
 
         # Update chat history
